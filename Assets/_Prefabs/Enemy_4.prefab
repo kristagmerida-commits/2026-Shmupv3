@@ -117,8 +117,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 10
   fireRate: 0.3
-  health: 10
-  score: 100
+  health: 6
+  score: 400
+  powerUpDropChance: 1
 --- !u!114 &-5834237933516866095
 MonoBehaviour:
   m_ObjectHideFlags: 0

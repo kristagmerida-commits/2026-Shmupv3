@@ -9,6 +9,9 @@ public class Main : MonoBehaviour
     static private Main S;                        // A private singleton for Main
     static private Dictionary<eWeaponType, WeaponDefinition> WEAP_DICT;
 
+    // === SCORE ===
+    static public int score = 0;                  // Current run's score
+    static public int highScore = 0;              // Best score across sessions
 
     [Header("Inscribed")]
     public bool spawnEnemies = true;
@@ -18,17 +21,29 @@ public class Main : MonoBehaviour
     public float gameRestartDelay = 2.0f;
     public GameObject prefabPowerUp;
     public WeaponDefinition[] weaponDefinitions;
-    public eWeaponType[] powerUpFrequency = new eWeaponType[] {        
+    public eWeaponType[] powerUpFrequency = new eWeaponType[] {
                                      eWeaponType.blaster, eWeaponType.blaster,
                                      eWeaponType.spread,  eWeaponType.shield };
+
+    // === SCORE ===
+    [Header("Score Settings")]
+    [Tooltip("Points awarded per successful projectile hit on an enemy")]
+    public int pointsPerHit = 1;
+    [Tooltip("When true, hit points are awarded even if the enemy survives")]
+    public bool rewardHitsNotJustKills = true;
+
     private BoundsCheck bndCheck;
 
     void Awake()
     {
         S = this;
-        // Set bndCheck to reference the BoundsCheck component on this 
+        // Set bndCheck to reference the BoundsCheck component on this
         // GameObject
         bndCheck = GetComponent<BoundsCheck>();
+
+        // === SCORE: reset per-run score; load persisted high score ===
+        score = 0;
+        highScore = PlayerPrefs.GetInt("HighScore", 0);
 
         // Invoke SpawnEnemy() once (in 2 seconds, based on default values)
         Invoke(nameof(SpawnEnemy), 1f / enemySpawnPerSecond);                // a
@@ -39,7 +54,6 @@ public class Main : MonoBehaviour
         {
             WEAP_DICT[def.type] = def;
         }
-
     }
 
     public void SpawnEnemy()
@@ -81,6 +95,9 @@ public class Main : MonoBehaviour
 
     void Restart()
     {
+        // === SCORE: persist high score before reloading ===
+        CommitHighScore();
+
         // Reload __Scene_0 to restart the game
         // "__Scene_0" below starts with 2 underscores and ends with a zero.
         SceneManager.LoadScene("__Scene_0");                               // d
@@ -91,12 +108,49 @@ public class Main : MonoBehaviour
         S.DelayedRestart();                                                  // b
     }
 
+    // === SCORE: public API used by Enemy, Enemy_4, and Hero ===
+
+    /// <summary>
+    /// Adds points to the current run's score. Call from Enemy on a hit,
+    /// on a kill, and from Hero for distance traveled.
+    /// </summary>
+    static public void AddScore(int amount)
+    {
+        score += amount;
+        if (score > highScore) highScore = score;
+    }
+
+    /// <summary>
+    /// Writes the current high score to PlayerPrefs if it beats the saved one.
+    /// Called automatically on Restart(); can also be called manually.
+    /// </summary>
+    static public void CommitHighScore()
+    {
+        int saved = PlayerPrefs.GetInt("HighScore", 0);
+        if (highScore > saved)
+        {
+            PlayerPrefs.SetInt("HighScore", highScore);
+            PlayerPrefs.Save();
+        }
+    }
+
+    /// <summary>
+    /// Convenience for the common "enemy took a hit" case. Reads
+    /// pointsPerHit from the singleton so it is tunable in the Inspector.
+    /// </summary>
+    static public void SHIP_HIT(Enemy e)
+    {
+        if (S == null) return;
+        if (!S.rewardHitsNotJustKills && e != null && e.health > 0) return;
+        AddScore(S.pointsPerHit);
+    }
+
     /// <summary>
     /// Static function that gets a WeaponDefinition from the WEAP_DICT static
     ///   protected field of the Main class.
     /// </summary>
     /// <returns>The WeaponDefinition, or if there is no WeaponDefinition with
-    ///   the eWeaponType passed in, returns a new WeaponDefinition with a 
+    ///   the eWeaponType passed in, returns a new WeaponDefinition with a
     ///   eWeaponType of eWeaponType.none.</returns>
     /// <param name="wt">The eWeaponType of the desired WeaponDefinition</param>
     static public WeaponDefinition GET_WEAPON_DEFINITION(eWeaponType wt)
@@ -105,7 +159,7 @@ public class Main : MonoBehaviour
         {                                      // b
             return (WEAP_DICT[wt]);
         }
-        // If no entry of the correct type exists in WEAP_DICT, return a new 
+        // If no entry of the correct type exists in WEAP_DICT, return a new
         //   WeaponDefinition with a type of eWeaponType.none (the default value)
         return (new WeaponDefinition());                                     // c
     }
@@ -114,9 +168,12 @@ public class Main : MonoBehaviour
     /// Called by an Enemy ship whenever it is destroyed. It sometimes creates
     ///   a PowerUp in place of the destroyed ship.
     /// </summary>
-    /// <param name="e"The Enemy that was destroyed</param
+    /// <param name="e">The Enemy that was destroyed</param>
     static public void SHIP_DESTROYED(Enemy e)
     {
+        // === SCORE: kill bonus uses the enemy's own score field ===
+        if (e != null) AddScore(e.score);
+
         // Potentially generate a PowerUp
         if (Random.value <= e.powerUpDropChance)
         { // Underlined red for now  // c
@@ -134,5 +191,4 @@ public class Main : MonoBehaviour
             pUp.transform.position = e.transform.position;
         }
     }
-
 }

@@ -117,8 +117,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 10
   fireRate: 0.3
-  health: 10
-  score: 100
+  health: 3
+  score: 50
+  powerUpDropChance: 1
   lifeTime: 5
   midpointYRange: {x: 1.5, y: 3}
   drawDebugInfo: 1
