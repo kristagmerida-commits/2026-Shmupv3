@@ -107,9 +107,7 @@ public class Weapon : MonoBehaviour
         if (weaponModel != null) Destroy(weaponModel);
         weaponModel = null;
 
-        // === CHANGE 1: null guard on weaponModelPrefab ===
-        // Prevents NullReferenceException if a WeaponDefinition has no
-        // weaponModelPrefab assigned (e.g. the phaser if you leave it blank).
+        // === CHANGE 1:
         if (def.weaponModelPrefab != null)
         {
             weaponModel = Instantiate<GameObject>(def.weaponModelPrefab, transform);
@@ -166,7 +164,7 @@ public class Weapon : MonoBehaviour
                 p.vel = p.transform.rotation * vel;
                 break;
 
-            // === CHANGE 3: new phaser case (heavy blaster) ===
+            // CHANGE 3: new phaser (heavy blaster) 
             // Same straight-shot pattern as blaster; its damage and firing
             // rate come from its own WeaponDefinition entry on _MainCamera.
             case eWeaponType.phaser:
@@ -189,7 +187,7 @@ public class Weapon : MonoBehaviour
 
     private ProjectileHero MakeProjectile()
     {
-        // === CHANGE 5: null guard on projectilePrefab ===
+        // CHANGE 5:
         if (def.projectilePrefab == null)
         {
             Debug.LogWarning("Weapon " + type + " has no projectilePrefab assigned.");

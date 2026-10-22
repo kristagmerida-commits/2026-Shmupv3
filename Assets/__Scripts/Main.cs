@@ -108,7 +108,7 @@ public class Main : MonoBehaviour
         S.DelayedRestart();                                                  // b
     }
 
-    // === SCORE: public API used by Enemy, Enemy_4, and Hero ===
+    // SCORE:
 
     /// <summary>
     /// Adds points to the current run's score. Call from Enemy on a hit,
